@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
   deleteTask,
@@ -17,129 +18,154 @@ import {
 
 const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
   const dispatch = useDispatch();
+  const [expandedId, setExpandedId] = useState(null);
 
-  const handleUpdate = (id, title, desc) => {
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
+  const openEditModal = (task) => {
+    setUpdatedData({
+      id: task.id,
+      title: task.title,
+      desc: task.desc,
+    });
     setInputVisible(true);
-    setUpdatedData({ id, title, desc });
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.grid}>
-        {data &&
-          data.map((item, i) => (
-            <View style={styles.card} key={i}>
-              <View>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.desc}>{item.desc}</Text>
-              </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.list}>
+          {data &&
+            data.map((task) => {
+              const isExpanded = expandedId === task.id;
 
-              <View style={styles.buttonRow}>
+              return (
                 <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    { backgroundColor: item.completed ? "#047857" : "#f87171" },
-                  ]}
-                  onPress={() => dispatch(toggleComplete(item.id))}
+                  key={task.id}
+                  style={styles.card}
+                  activeOpacity={0.8}
+                  onPress={() => toggleExpand(task.id)}
                 >
-                  <Text style={styles.statusText}>
-                    {item.completed ? "Completed" : "Incomplete"}
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.headerRow}>
+                    <Text style={styles.title}>{task.title}</Text>
 
-                <View style={styles.iconRow}>
-                  <TouchableOpacity onPress={() => dispatch(toggleImportant(item.id))}>
-                    {item.important ? (
-                      <FontAwesome name="heart" size={20} color="#ef4444" />
-                    ) : (
-                      <FontAwesome name="heart-o" size={20} color="#d1d5db" />
-                    )}
-                  </TouchableOpacity>
+                    <View style={styles.iconGroup}>
+                      {task.important && (
+                        <Ionicons
+                          name="heart"
+                          size={18}
+                          color="#ef4444"
+                          style={styles.icon}
+                        />
+                      )}
+                      <TouchableOpacity onPress={() => openEditModal(task)}>
+                        <Ionicons
+                          name="information-circle-outline"
+                          size={22}
+                          color="#3b82f6"
+                          style={styles.icon}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-                  {home !== "false" && (
-                    <TouchableOpacity
-                      onPress={() => handleUpdate(item.id, item.title, item.desc)}
-                    >
-                      <FontAwesome name="edit" size={20} color="#d1d5db" />
-                    </TouchableOpacity>
+                  {isExpanded && (
+                    <>
+                      <Text style={styles.desc}>{task.desc}</Text>
+
+                      <View style={styles.footerRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.statusButton,
+                            {
+                              backgroundColor: task.completed
+                                ? "#047857"
+                                : "#f87171",
+                            },
+                          ]}
+                          onPress={() => dispatch(toggleComplete(task.id))}
+                        >
+                          <Text style={styles.statusText}>
+                            {task.completed ? "Completed" : "Incomplete"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
                   )}
+                </TouchableOpacity>
+              );
+            })}
+        </ScrollView>
 
-                  <TouchableOpacity onPress={() => dispatch(deleteTask(item.id))}>
-                    <MaterialIcons name="delete" size={22} color="#d1d5db" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          ))}
-      </ScrollView>
-
-      {home === "true" && (
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={() => setInputVisible(true)}
-        >
-          <Ionicons name="add" size={32} color="#fff" />
-        </TouchableOpacity>
-      )}
-    </View>
+        {home === "true" && (
+          <TouchableOpacity
+            style={styles.floatingButton}
+            onPress={() => setInputVisible(true)}
+          >
+            <Ionicons name="add" size={32} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 
 export default Cards;
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#111827",
+  },
   container: {
     flex: 1,
     position: "relative",
-    marginTop: 18,
   },
-  grid: {
+  list: {
     padding: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
     paddingBottom: 100,
   },
   card: {
     backgroundColor: "#1f2937",
     padding: 16,
     borderRadius: 8,
-    width: "48%",
     marginBottom: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
     color: "#fff",
+    flex: 1,
+    marginRight: 12,
+  },
+  infoButton: {
+    padding: 4,
   },
   desc: {
     fontSize: 14,
     color: "#d1d5db",
     marginVertical: 8,
   },
-  buttonRow: {
-    flexDirection: "row",
+  footerRow: {
+    marginTop: 10,
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 12,
+    justifyContent: "center",
   },
   statusButton: {
     borderRadius: 6,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    flex: 1,
-    marginRight: 8,
+    paddingHorizontal: 100,
   },
   statusText: {
     color: "#fff",
-    textAlign: "center",
-    fontSize: 12,
-  },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
+    fontSize: 15,
   },
   floatingButton: {
     position: "absolute",
@@ -153,5 +179,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  iconGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  icon: {
+    marginLeft: 8,
   },
 });

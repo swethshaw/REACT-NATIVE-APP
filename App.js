@@ -71,8 +71,8 @@ const InitApp = () => {
       >
         <Tab.Screen name="All" component={AllTasksScreen} />
         <Tab.Screen name="Important" component={ImportantTasksScreen} />
-        <Tab.Screen name="Completed" component={CompletedTasksScreen} />
         <Tab.Screen name="Incomplete" component={IncompleteTasksScreen} />
+        <Tab.Screen name="Completed" component={CompletedTasksScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

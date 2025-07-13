@@ -5,42 +5,45 @@ const tasksSlice = createSlice({
   name: "tasks",
   initialState: [],
   reducers: {
-    setTasks: (state, action) => action.payload,
-
+    setTasks: (state, action) => {
+      return action.payload;
+    },
     addTask: (state, action) => {
-      const newState = [...state, action.payload];
-      saveTasks(newState);
-      return newState;
+      state.push(action.payload);
+      saveTasks(state);
     },
-
-    deleteTask: (state, action) => {
-      const newState = state.filter(task => task.id !== action.payload);
-      saveTasks(newState);
-      return newState;
-    },
-
-    toggleComplete: (state, action) => {
-      const newState = state.map(task =>
-        task.id === action.payload ? { ...task, completed: !task.completed } : task
-      );
-      saveTasks(newState);
-      return newState;
-    },
-
-    toggleImportant: (state, action) => {
-      const newState = state.map(task =>
-        task.id === action.payload ? { ...task, important: !task.important } : task
-      );
-      saveTasks(newState);
-      return newState;
-    },
-
     updateTask: (state, action) => {
-      const newState = state.map(task =>
-        task.id === action.payload.id ? action.payload : task
-      );
-      saveTasks(newState);
-      return newState;
+      const { id, title, desc } = action.payload;
+      const task = state.find((t) => t.id === id);
+      if (task) {
+        task.title = title;
+        task.desc = desc;
+        saveTasks(state);
+      }
+    },
+    deleteTask: (state, action) => {
+      const updated = state.filter((t) => t.id !== action.payload);
+      saveTasks(updated);
+      return updated;
+    },
+    toggleComplete: (state, action) => {
+      const task = state.find((t) => t.id === action.payload);
+      if (task) {
+        task.completed = !task.completed;
+        saveTasks(state);
+      }
+    },
+    toggleImportant: (state, action) => {
+      const task = state.find((t) => t.id === action.payload);
+      if (task) {
+        task.important = !task.important;
+        saveTasks(state);
+      }
+    },
+    clearCompletedTasks: (state) => {
+      const filtered = state.filter((task) => !task.completed);
+      saveTasks(filtered);
+      return filtered;
     },
   },
 });
@@ -48,10 +51,11 @@ const tasksSlice = createSlice({
 export const {
   setTasks,
   addTask,
+  updateTask,
   deleteTask,
   toggleComplete,
   toggleImportant,
-  updateTask,
+  clearCompletedTasks, 
 } = tasksSlice.actions;
 
 export default tasksSlice.reducer;
