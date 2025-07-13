@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import uuid from "react-native-uuid";
 
-import { addTask, updateTask } from "../store/tasksSlice";
+import { addTask, updateTask, deleteTask } from "../store/tasksSlice";
 
 const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   const dispatch = useDispatch();
@@ -21,7 +21,6 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 
   useEffect(() => {
     if (updatedData?.id) {
-      // ✅ Make sure "important" is safely accessed and defaults to false
       setForm({
         title: updatedData.title || "",
         desc: updatedData.desc || "",
@@ -63,6 +62,24 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     }
 
     resetForm();
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Task",
+      "Are you sure you want to delete this task?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            dispatch(deleteTask(updatedData.id));
+            resetForm();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -110,6 +127,12 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               {updatedData?.id ? "Update" : "Submit"}
             </Text>
           </TouchableOpacity>
+
+          {updatedData?.id && (
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Text style={styles.deleteText}>Delete Task</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -161,6 +184,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   submitText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  deleteButton: {
+    backgroundColor: "#ef4444",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  deleteText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 
@@ -18,7 +19,21 @@ const CompletedTasksScreen = () => {
   const completedTasks = tasks?.filter((task) => task.completed);
 
   const handleClearAll = () => {
-    dispatch(clearCompletedTasks());
+    Alert.alert(
+      "Clear All Completed Tasks",
+      "Are you sure you want to delete all completed tasks?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => dispatch(clearCompletedTasks()),
+          style: "destructive",
+        },
+      ]
+    );
   };
 
   if (!tasks) {
