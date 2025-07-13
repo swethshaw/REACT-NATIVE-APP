@@ -13,11 +13,12 @@ const tasksSlice = createSlice({
       saveTasks(state);
     },
     updateTask: (state, action) => {
-      const { id, title, desc } = action.payload;
+      const { id, title, desc, important} = action.payload;
       const task = state.find((t) => t.id === id);
       if (task) {
         task.title = title;
         task.desc = desc;
+        task.important = important;
         saveTasks(state);
       }
     },

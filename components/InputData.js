@@ -21,10 +21,11 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 
   useEffect(() => {
     if (updatedData?.id) {
+      // ✅ Make sure "important" is safely accessed and defaults to false
       setForm({
         title: updatedData.title || "",
         desc: updatedData.desc || "",
-        important: updatedData.important || false,
+        important: updatedData.important ?? false,
       });
     } else {
       setForm({ title: "", desc: "", important: false });
@@ -32,7 +33,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   }, [updatedData]);
 
   const handleChange = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm({ ...form, [key]: value });
   };
 
   const resetForm = () => {
@@ -94,12 +95,12 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
             multiline
           />
 
-          <View style={styles.switchRow}>
+          <View style={styles.switchContainer}>
             <Text style={styles.switchLabel}>Mark as Important</Text>
             <Switch
               value={form.important}
               onValueChange={(value) => handleChange("important", value)}
-              trackColor={{ false: "#6b7280", true: "#ef4444" }}
+              trackColor={{ false: "#6b7280", true: "#3b82f6" }}
               thumbColor={form.important ? "#fff" : "#f4f3f4"}
             />
           </View>
@@ -141,18 +142,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  switchRow: {
+  switchContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1f2937",
-    padding: 10,
-    borderRadius: 8,
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   switchLabel: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "500",
   },
   submitButton: {
     backgroundColor: "#3b82f6",
@@ -162,7 +161,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   submitText: {
-    color: "#000",
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },

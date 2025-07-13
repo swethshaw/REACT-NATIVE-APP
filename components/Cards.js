@@ -24,14 +24,15 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const openEditModal = (task) => {
-    setUpdatedData({
-      id: task.id,
-      title: task.title,
-      desc: task.desc,
-    });
-    setInputVisible(true);
-  };
+const openEditModal = (task) => {
+  setUpdatedData({
+    id: task.id,
+    title: task.title,
+    desc: task.desc,
+    important: task.important,
+  });
+  setInputVisible(true);
+};
 
   return (
     <SafeAreaView style={styles.safeArea}>
