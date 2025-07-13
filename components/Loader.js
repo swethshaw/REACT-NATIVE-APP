@@ -13,9 +13,9 @@ export default Loader;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // takes up full screen
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#111827", // optional: matches your app theme
+    backgroundColor: "#111827",
   },
 });

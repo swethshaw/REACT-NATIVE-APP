@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   scrollContent: {
-    paddingBottom: 80, // to avoid content under button
+    paddingBottom: 80,
   },
   centered: {
     flex: 1,

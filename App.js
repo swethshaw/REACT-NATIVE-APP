@@ -10,22 +10,19 @@ import store from "./store/store";
 import { loadTasks } from "./utils/storage";
 import { setTasks } from "./store/tasksSlice";
 
-// Screens
 import AllTasksScreen from "./screens/AllTasks";
 import CompletedTasksScreen from "./screens/CompletedTasks";
 import ImportantTasksScreen from "./screens/ImportantTasks";
 import IncompleteTasksScreen from "./screens/IncompletedTasks";
 
-// Create bottom tab navigator
 const Tab = createBottomTabNavigator();
 
-// Component that initializes tasks and sets up navigation
 const InitApp = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const storedTasks = await loadTasks(); // from local storage
+      const storedTasks = await loadTasks();
       dispatch(setTasks(storedTasks));
     };
     fetchTasks();
@@ -78,7 +75,6 @@ const InitApp = () => {
   );
 };
 
-// Root App
 const App = () => {
   return (
     <Provider store={store}>

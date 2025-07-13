@@ -49,7 +49,6 @@ const AllTasksScreen = () => {
             />
           </ScrollView>
 
-          {/* Floating Add Button */}
           <TouchableOpacity
             style={styles.floatingButton}
             onPress={() => setInputVisible(true)}
