@@ -1,11 +1,14 @@
 import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Provider, useDispatch } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
-
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import * as Permissions from "expo-permissions";
+import { Platform } from "react-native";
 import store from "./store/store";
 import { loadTasks } from "./utils/storage";
 import { setTasks } from "./store/tasksSlice";
@@ -21,12 +24,45 @@ const InitApp = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+      (async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") {
+      alert("Please enable notifications to use the alarm feature.");
+    }
+  })();
+    registerForPushNotificationsAsync();
     const fetchTasks = async () => {
       const storedTasks = await loadTasks();
       dispatch(setTasks(storedTasks));
     };
     fetchTasks();
   }, []);
+
+  async function registerForPushNotificationsAsync() {
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        alert('Failed to get push token for notifications!');
+        return;
+      }
+    } else {
+      alert('Must use physical device for notifications');
+    }
+
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.HIGH,
+      });
+    }
+  }
 
   return (
     <NavigationContainer>
@@ -78,9 +114,9 @@ const InitApp = () => {
 const App = () => {
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#1f2937" }}>
         <InitApp />
-      </SafeAreaProvider>
+      </SafeAreaView>
     </Provider>
   );
 };

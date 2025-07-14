@@ -1,13 +1,19 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
+import InputData from "../components/InputData";
 import Loader from "../components/Loader";
 import Cards from "../components/Cards";
 
 const IncompleteTasksScreen = () => {
   const tasks = useSelector((state) => state.tasks);
   const incompleteTasks = tasks?.filter((task) => !task.completed);
-
+const [inputVisible, setInputVisible] = React.useState(false);
+  const [updatedData, setUpdatedData] = React.useState({
+    id: "",
+    title: "",
+    desc: "",
+  });
   if (!tasks) {
     return (
       <View style={styles.centered}>
@@ -26,7 +32,18 @@ const IncompleteTasksScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <Cards home={false} data={incompleteTasks} />
+      <Cards
+          home={false}
+          data={incompleteTasks}
+          setInputVisible={setInputVisible}
+          setUpdatedData={setUpdatedData}
+        />
+    <InputData
+        visible={inputVisible}
+        setVisible={setInputVisible}
+        updatedData={updatedData}
+        setUpdatedData={setUpdatedData}
+      />
     </ScrollView>
   );
 };

@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-
+import InputData from "../components/InputData";
 import Cards from "../components/Cards";
 import Loader from "../components/Loader";
 import { clearCompletedTasks } from "../store/tasksSlice";
@@ -17,7 +17,12 @@ const CompletedTasksScreen = () => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.tasks);
   const completedTasks = tasks?.filter((task) => task.completed);
-
+  const [inputVisible, setInputVisible] = React.useState(false);
+  const [updatedData, setUpdatedData] = React.useState({
+    id: "",
+    title: "",
+    desc: "",
+  });
   const handleClearAll = () => {
     Alert.alert(
       "Clear All Completed Tasks",
@@ -55,12 +60,23 @@ const CompletedTasksScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Cards home={false} data={completedTasks} />
+        <Cards
+          home={false}
+          data={completedTasks}
+          setInputVisible={setInputVisible}
+          setUpdatedData={setUpdatedData}
+        />
       </ScrollView>
 
       <TouchableOpacity style={styles.clearButton} onPress={handleClearAll}>
         <Text style={styles.clearButtonText}>Clear All</Text>
       </TouchableOpacity>
+      <InputData
+        visible={inputVisible}
+        setVisible={setInputVisible}
+        updatedData={updatedData}
+        setUpdatedData={setUpdatedData}
+      />
     </View>
   );
 };
