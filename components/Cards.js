@@ -24,15 +24,29 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-const openEditModal = (task) => {
-  setUpdatedData({
-    id: task.id,
-    title: task.title,
-    desc: task.desc,
-    important: task.important,
-  });
-  setInputVisible(true);
-};
+  const getRemainingTime = (alarmTime) => {
+    const now = new Date();
+    const target = new Date(alarmTime);
+    const diff = target - now;
+
+    if (diff <= 0) return "⏰ Time's up";
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m left`;
+  };
+
+  const openEditModal = (task) => {
+    setUpdatedData({
+      id: task.id,
+      title: task.title,
+      desc: task.desc,
+      important: task.important,
+      alarmTime: task.alarmTime,
+      notificationId: task.notificationId,
+    });
+    setInputVisible(true);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -50,7 +64,14 @@ const openEditModal = (task) => {
                   onPress={() => toggleExpand(task.id)}
                 >
                   <View style={styles.headerRow}>
-                    <Text style={styles.title}>{task.title}</Text>
+                    <View style={{ marginBottom: 3, flex: 1 }}>
+                      <Text style={styles.title}>{task.title}</Text>
+                      {task.alarmTime && (
+                        <Text style={styles.remainingTime}>
+                          {getRemainingTime(task.alarmTime)}
+                        </Text>
+                      )}
+                    </View>
 
                     <View style={styles.iconGroup}>
                       {task.important && (
@@ -143,11 +164,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#fff",
-    flex: 1,
     marginRight: 12,
   },
-  infoButton: {
-    padding: 4,
+  remainingTime: {
+    color: "#9ca3af",
+    fontSize: 13,
+    marginTop: 4,
   },
   desc: {
     fontSize: 14,
