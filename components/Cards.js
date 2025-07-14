@@ -11,9 +11,7 @@ import { useDispatch } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  deleteTask,
   toggleComplete,
-  toggleImportant,
 } from "../store/tasksSlice";
 
 const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {

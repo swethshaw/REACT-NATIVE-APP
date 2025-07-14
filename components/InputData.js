@@ -18,8 +18,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
 import { useDispatch } from "react-redux";
 import { addTask, updateTask, deleteTask } from "../store/tasksSlice";
-
-// Notification handler setup
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -56,16 +54,30 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       if (updatedData.alarmTime) {
         const alarmDate = new Date(updatedData.alarmTime);
         setEnableDate(true);
-        setEnableTime(alarmDate.getHours() !== 0 || alarmDate.getMinutes() !== 0);
+        setEnableTime(
+          alarmDate.getHours() !== 0 || alarmDate.getMinutes() !== 0
+        );
       }
     } else {
-      setForm({ title: "", desc: "", important: false, alarmTime: null, notificationId: null });
+      setForm({
+        title: "",
+        desc: "",
+        important: false,
+        alarmTime: null,
+        notificationId: null,
+      });
     }
   }, [updatedData]);
 
   const resetForm = () => {
     setVisible(false);
-    setForm({ title: "", desc: "", important: false, alarmTime: null, notificationId: null });
+    setForm({
+      title: "",
+      desc: "",
+      important: false,
+      alarmTime: null,
+      notificationId: null,
+    });
     setEnableDate(false);
     setEnableTime(false);
     setShowDatePicker(false);
@@ -77,7 +89,11 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     setShowDatePicker(false);
     if (event.type === "set" && selectedDate) {
       const updated = new Date(form.alarmTime || new Date());
-      updated.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      updated.setFullYear(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+      );
       setForm((prev) => ({ ...prev, alarmTime: updated }));
     }
   };
@@ -121,14 +137,18 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       const base = form.alarmTime ? new Date(form.alarmTime) : now;
       const date = enableDate ? base : now;
       const time = enableTime ? base : now;
-      alarmTime = new Date(date.setHours(time.getHours(), time.getMinutes(), 0, 0));
+      alarmTime = new Date(
+        date.setHours(time.getHours(), time.getMinutes(), 0, 0)
+      );
     }
 
     if (updatedData?.notificationId) {
       await cancelNotification(updatedData.notificationId);
     }
 
-    const notificationId = alarmTime ? await scheduleNotification(form.title, alarmTime) : null;
+    const notificationId = alarmTime
+      ? await scheduleNotification(form.title, alarmTime)
+      : null;
 
     const taskPayload = {
       ...form,
@@ -176,7 +196,9 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               placeholder="Title"
               placeholderTextColor="#ccc"
               value={form.title}
-              onChangeText={(text) => setForm((prev) => ({ ...prev, title: text }))}
+              onChangeText={(text) =>
+                setForm((prev) => ({ ...prev, title: text }))
+              }
             />
 
             <TextInput
@@ -184,7 +206,9 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               placeholder="Description"
               placeholderTextColor="#ccc"
               value={form.desc}
-              onChangeText={(text) => setForm((prev) => ({ ...prev, desc: text }))}
+              onChangeText={(text) =>
+                setForm((prev) => ({ ...prev, desc: text }))
+              }
               multiline
             />
 
@@ -192,24 +216,27 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               <Text style={styles.switchLabel}>Mark as Important</Text>
               <Switch
                 value={form.important}
-                onValueChange={(value) => setForm((prev) => ({ ...prev, important: value }))}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, important: value }))
+                }
               />
             </View>
 
             <View style={styles.switchContainer}>
               <Text style={styles.switchLabel}>Set Date</Text>
-              <Switch value={enableDate} onValueChange={setEnableDate} />
+              <Switch
+                value={enableDate}
+                onValueChange={(val) => {
+                  setEnableDate(val);
+                  if (val) {
+                    setShowDatePicker(true);
+                  } else if (!val && !enableTime) {
+                    setForm((prev) => ({ ...prev, alarmTime: null }));
+                  }
+                }}
+              />
             </View>
 
-            {enableDate && (
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.pickerButton}>
-                <Text style={styles.dateButtonText}>
-                  {form.alarmTime
-                    ? `Date: ${new Date(form.alarmTime).toLocaleDateString()}`
-                    : "Choose Date"}
-                </Text>
-              </TouchableOpacity>
-            )}
             {showDatePicker && (
               <DateTimePicker
                 mode="date"
@@ -222,21 +249,19 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 
             <View style={styles.switchContainer}>
               <Text style={styles.switchLabel}>Set Time</Text>
-              <Switch value={enableTime} onValueChange={setEnableTime} />
+              <Switch
+                value={enableTime}
+                onValueChange={(val) => {
+                  setEnableTime(val);
+                  if (val) {
+                    setShowTimePicker(true);
+                  } else if (!val && !enableDate) {
+                    setForm((prev) => ({ ...prev, alarmTime: null }));
+                  }
+                }}
+              />
             </View>
 
-            {enableTime && (
-              <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.pickerButton}>
-                <Text style={styles.dateButtonText}>
-                  {form.alarmTime
-                    ? `Time: ${new Date(form.alarmTime).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}`
-                    : "Choose Time"}
-                </Text>
-              </TouchableOpacity>
-            )}
             {showTimePicker && (
               <DateTimePicker
                 mode="time"
@@ -247,25 +272,20 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               />
             )}
 
-            {(enableDate || enableTime) && (
-              <TouchableOpacity
-                onPress={() => {
-                  setForm((prev) => ({ ...prev, alarmTime: null }));
-                  setEnableDate(false);
-                  setEnableTime(false);
-                }}
-                style={[styles.pickerButton, { backgroundColor: "#dc2626" }]}
-              >
-                <Text style={styles.dateButtonText}>Reset Alarm</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitText}>{updatedData?.id ? "Update" : "Submit"}</Text>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+            >
+              <Text style={styles.submitText}>
+                {updatedData?.id ? "Update" : "Submit"}
+              </Text>
             </TouchableOpacity>
 
             {updatedData?.id && (
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
                 <Text style={styles.deleteText}>Delete Task</Text>
               </TouchableOpacity>
             )}
@@ -311,16 +331,6 @@ const styles = StyleSheet.create({
   switchLabel: {
     color: "#fff",
     fontSize: 16,
-  },
-  pickerButton: {
-    padding: 10,
-    backgroundColor: "#4b5563",
-    borderRadius: 8,
-    marginVertical: 5,
-    alignItems: "center",
-  },
-  dateButtonText: {
-    color: "#fff",
   },
   submitButton: {
     backgroundColor: "#3b82f6",
