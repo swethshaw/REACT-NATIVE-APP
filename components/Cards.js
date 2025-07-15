@@ -23,10 +23,7 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
   const dispatch = useDispatch();
   const [expandedId, setExpandedId] = useState(null);
   const [sortType, setSortType] = useState("time");
-  const [sortedData, setSortedData] = useState([]);
   const [visibleData, setVisibleData] = useState([]);
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 6;
 
   useEffect(() => {
     if (data?.length) {
@@ -45,23 +42,15 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
           sorted.sort((a, b) => a.title.localeCompare(b.title));
           break;
       }
-      setSortedData(sorted);
-      setPage(1);
-      setVisibleData(sorted.slice(0, itemsPerPage));
+      setVisibleData(sorted);
     }
   }, [data, sortType]);
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    const nextItems = sortedData.slice(0, nextPage * itemsPerPage);
-    setPage(nextPage);
-    setVisibleData(nextItems);
+  const toggleExpand = (id) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedId((prevId) => (prevId === id ? null : id));
   };
 
-const toggleExpand = (id) => {
-  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  setExpandedId((prevId) => (prevId === id ? null : id));
-};
   const getRemainingTime = (alarmTime) => {
     const now = new Date();
     const target = new Date(alarmTime);
@@ -178,8 +167,6 @@ const toggleExpand = (id) => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.6}
           showsVerticalScrollIndicator={false}
         />
 

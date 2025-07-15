@@ -10,22 +10,16 @@ import {
   Switch,
   TouchableWithoutFeedback,
   Keyboard,
-  Platform,
 } from "react-native";
-import * as Notifications from "expo-notifications";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
 import { useDispatch } from "react-redux";
 import { addTask, updateTask, deleteTask } from "../store/tasksSlice";
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import {
+  scheduleAlarmNotification,
+  cancelAlarmNotification,
+} from "../utils/notifications";
 
 const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   const dispatch = useDispatch();
@@ -35,6 +29,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     important: false,
     alarmTime: null,
     notificationId: null,
+    sound: "default",
   });
 
   const [enableDate, setEnableDate] = useState(false);
@@ -56,6 +51,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
           important: updatedData.important ?? false,
           alarmTime: alarm,
           notificationId: updatedData.notificationId || null,
+          sound: updatedData.sound || "default",
         });
 
         if (alarm) {
@@ -107,22 +103,6 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     }
   };
 
-  const scheduleNotification = async (title, time) => {
-    if (!time) return null;
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Task Reminder",
-        body: `Reminder to complete: ${title}`,
-      },
-      trigger: { type: "date", date: time },
-    });
-    return id;
-  };
-
-  const cancelNotification = async (id) => {
-    if (id) await Notifications.cancelScheduledNotificationAsync(id);
-  };
-
   const handleSubmit = async () => {
     const currentErrors = {};
     if (!form.title.trim()) currentErrors.title = true;
@@ -131,18 +111,17 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       setErrors(currentErrors);
       return;
     }
-
     const alarmTime =
       enableDate || enableTime
         ? new Date(form.alarmTime || new Date()).setSeconds(0, 0)
         : null;
 
     if (updatedData?.notificationId) {
-      await cancelNotification(updatedData.notificationId);
+      await cancelAlarmNotification(updatedData.notificationId);
     }
 
     const notificationId = alarmTime
-      ? await scheduleNotification(form.title, new Date(alarmTime))
+      ? await scheduleNotification(form.title, new Date(alarmTime), form.sound)
       : null;
 
     const payload = {
@@ -175,7 +154,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
         style: "destructive",
         onPress: async () => {
           if (updatedData?.notificationId) {
-            await cancelNotification(updatedData.notificationId);
+            await cancelAlarmNotification(updatedData.notificationId);
           }
           dispatch(deleteTask(updatedData.id));
           resetForm();
@@ -199,7 +178,10 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.overlay}>
           <View style={styles.modalContent}>
-            <TouchableOpacity onPress={() => resetForm()} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={() => resetForm()}
+              style={styles.closeButton}
+            >
               <Ionicons name="close" size={28} color="#fff" />
             </TouchableOpacity>
 
@@ -215,7 +197,11 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
             />
 
             <TextInput
-              style={[styles.input, styles.descInput, errors.desc && styles.errorInput]}
+              style={[
+                styles.input,
+                styles.descInput,
+                errors.desc && styles.errorInput,
+              ]}
               placeholder="Description"
               placeholderTextColor="#ccc"
               value={form.desc}
@@ -230,7 +216,9 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               <Text style={styles.switchLabel}>Mark as Important</Text>
               <Switch
                 value={form.important}
-                onValueChange={(v) => setForm((prev) => ({ ...prev, important: v }))}
+                onValueChange={(v) =>
+                  setForm((prev) => ({ ...prev, important: v }))
+                }
               />
             </View>
 
@@ -288,14 +276,39 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
               </>
             )}
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            {(enableDate || enableTime) && (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.switchLabel}>Alarm Sound</Text>
+                <Picker
+                  selectedValue={form.sound || "default"}
+                  onValueChange={(value) =>
+                    setForm((prev) => ({ ...prev, sound: value }))
+                  }
+                  style={styles.picker}
+                  dropdownIconColor="#fff"
+                >
+                  <Picker.Item label="Default" value="default" />
+                  <Picker.Item label="Beep" value="beep.wav" />
+                  <Picker.Item label="Chime" value="chime.wav" />
+                  <Picker.Item label="Alarm Tone" value="alarm.mp3" />
+                </Picker>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+            >
               <Text style={styles.submitText}>
                 {updatedData?.id ? "Update" : "Add Task"}
               </Text>
             </TouchableOpacity>
 
             {updatedData?.id && (
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
                 <Text style={styles.submitText}>Delete Task</Text>
               </TouchableOpacity>
             )}

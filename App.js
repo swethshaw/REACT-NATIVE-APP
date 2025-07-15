@@ -7,11 +7,12 @@ import { Provider, useDispatch } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import * as Permissions from "expo-permissions";
 import { Platform } from "react-native";
+
 import store from "./store/store";
 import { loadTasks } from "./utils/storage";
 import { setTasks } from "./store/tasksSlice";
+import { configureNotificationChannel } from "./utils/notifications";
 
 import AllTasksScreen from "./screens/AllTasks";
 import CompletedTasksScreen from "./screens/CompletedTasks";
@@ -24,45 +25,20 @@ const InitApp = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-      (async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== "granted") {
-      alert("Please enable notifications to use the alarm feature.");
-    }
-  })();
-    registerForPushNotificationsAsync();
-    const fetchTasks = async () => {
+    (async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        alert("Please enable notifications to use the alarm feature.");
+      }
+
+      if (Platform.OS === "android") {
+        await configureNotificationChannel();
+      }
+
       const storedTasks = await loadTasks();
       dispatch(setTasks(storedTasks));
-    };
-    fetchTasks();
+    })();
   }, []);
-
-  async function registerForPushNotificationsAsync() {
-    if (Device.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        alert('Failed to get push token for notifications!');
-        return;
-      }
-    } else {
-      alert('Must use physical device for notifications');
-    }
-
-    if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.HIGH,
-      });
-    }
-  }
 
   return (
     <NavigationContainer>
@@ -97,7 +73,6 @@ const InitApp = () => {
               default:
                 iconName = "ellipse";
             }
-
             return <Ionicons name={iconName} size={size} color={color} />;
           },
         })}
