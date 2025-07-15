@@ -159,7 +159,14 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     if (updatedData?.id) {
       dispatch(updateTask({ id: updatedData.id, ...taskPayload }));
     } else {
-      dispatch(addTask({ id: uuid.v4(), completed: false, ...taskPayload }));
+      dispatch(
+        addTask({
+          id: uuid.v4(),
+          completed: false,
+          createdAt: new Date().toISOString(),
+          ...taskPayload,
+        })
+      );
     }
 
     resetForm();

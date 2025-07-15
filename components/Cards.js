@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,17 +6,43 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  toggleComplete,
-} from "../store/tasksSlice";
+import { toggleComplete } from "../store/tasksSlice";
 
 const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
   const dispatch = useDispatch();
   const [expandedId, setExpandedId] = useState(null);
+  const [sortType, setSortType] = useState("time");
+  const [sortedData, setSortedData] = useState([]);
+
+  useEffect(() => {
+    const sorted = [...data];
+    switch (sortType) {
+      case "time":
+        sorted.sort(
+          (a, b) => new Date(a.alarmTime || 0) - new Date(b.alarmTime || 0)
+        );
+        break;
+      case "newest":
+        sorted.sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        );
+        break;
+      case "oldest":
+        sorted.sort(
+          (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+        );
+        break;
+      case "az":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+    }
+    setSortedData(sorted);
+  }, [data, sortType]);
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
@@ -29,9 +55,16 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
 
     if (diff <= 0) return "⏰ Time's up";
 
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m left`;
+    const diffInHours = diff / (1000 * 60 * 60);
+
+    if (diffInHours > 24) {
+      const daysLeft = Math.floor(diffInHours / 24);
+      return `🗓 ${daysLeft} day${daysLeft > 1 ? "s" : ""} left`;
+    } else {
+      const hours = Math.floor(diffInHours);
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      return `⏳ ${hours}h ${minutes}m left`;
+    }
   };
 
   const openEditModal = (task) => {
@@ -49,9 +82,24 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        <View style={styles.sortContainer}>
+          <Text style={styles.sortLabel}>Sort by:</Text>
+          <Picker
+            selectedValue={sortType}
+            onValueChange={(value) => setSortType(value)}
+            style={styles.sortPicker}
+            dropdownIconColor="#fff"
+          >
+            <Picker.Item label="Time" value="time" />
+            <Picker.Item label="Newest" value="newest" />
+            <Picker.Item label="Oldest" value="oldest" />
+            <Picker.Item label="A-Z" value="az" />
+          </Picker>
+        </View>
+
         <ScrollView contentContainerStyle={styles.list}>
-          {data &&
-            data.map((task) => {
+          {sortedData &&
+            sortedData.map((task) => {
               const isExpanded = expandedId === task.id;
 
               return (
@@ -142,6 +190,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: "relative",
+  },
+  sortContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1f2937",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  sortLabel: {
+    color: "#fff",
+    marginRight: 8,
+    fontSize: 16,
+  },
+  sortPicker: {
+    flex: 1,
+    color: "#fff",
   },
   list: {
     padding: 12,
