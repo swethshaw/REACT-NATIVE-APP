@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
+
 import InputData from "../components/InputData";
 import Loader from "../components/Loader";
 import Cards from "../components/Cards";
@@ -8,12 +9,14 @@ import Cards from "../components/Cards";
 const IncompleteTasksScreen = () => {
   const tasks = useSelector((state) => state.tasks);
   const incompleteTasks = tasks?.filter((task) => !task.completed);
-const [inputVisible, setInputVisible] = React.useState(false);
-  const [updatedData, setUpdatedData] = React.useState({
+
+  const [inputVisible, setInputVisible] = useState(false);
+  const [updatedData, setUpdatedData] = useState({
     id: "",
     title: "",
     desc: "",
   });
+
   if (!tasks) {
     return (
       <View style={styles.centered}>
@@ -31,20 +34,23 @@ const [inputVisible, setInputVisible] = React.useState(false);
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Cards
+    <View style={styles.container}>
+      {/* <ScrollView contentContainerStyle={styles.scrollContent}> */}
+        <Cards
           home={false}
           data={incompleteTasks}
           setInputVisible={setInputVisible}
           setUpdatedData={setUpdatedData}
         />
-    <InputData
+      {/* </ScrollView> */}
+
+      <InputData
         visible={inputVisible}
         setVisible={setInputVisible}
         updatedData={updatedData}
         setUpdatedData={setUpdatedData}
       />
-    </ScrollView>
+    </View>
   );
 };
 
@@ -54,8 +60,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111827",
-    // paddingHorizontal: 10,
-    // paddingTop: 10,
+  },
+  scrollContent: {
+    paddingBottom: 80,
   },
   centered: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
+
 import InputData from "../components/InputData";
 import Cards from "../components/Cards";
 import Loader from "../components/Loader";
@@ -17,21 +18,19 @@ const CompletedTasksScreen = () => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.tasks);
   const completedTasks = tasks?.filter((task) => task.completed);
-  const [inputVisible, setInputVisible] = React.useState(false);
-  const [updatedData, setUpdatedData] = React.useState({
+  const [inputVisible, setInputVisible] = useState(false);
+  const [updatedData, setUpdatedData] = useState({
     id: "",
     title: "",
     desc: "",
   });
+
   const handleClearAll = () => {
     Alert.alert(
       "Clear All Completed Tasks",
       "Are you sure you want to delete all completed tasks?",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Yes",
           onPress: () => dispatch(clearCompletedTasks()),
@@ -59,18 +58,19 @@ const CompletedTasksScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      {/* <ScrollView contentContainerStyle={styles.scrollContent}> */}
         <Cards
           home={false}
           data={completedTasks}
           setInputVisible={setInputVisible}
           setUpdatedData={setUpdatedData}
         />
-      </ScrollView>
+      {/* </ScrollView> */}
 
       <TouchableOpacity style={styles.clearButton} onPress={handleClearAll}>
         <Text style={styles.clearButtonText}>Clear All</Text>
       </TouchableOpacity>
+
       <InputData
         visible={inputVisible}
         setVisible={setInputVisible}
@@ -87,8 +87,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111827",
-    // paddingTop: 10,
-    // paddingHorizontal: 10,
     position: "relative",
   },
   scrollContent: {

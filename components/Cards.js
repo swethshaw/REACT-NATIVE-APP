@@ -4,50 +4,64 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
+  Platform,
+  FlatList,
+  LayoutAnimation,
+  UIManager,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import { toggleComplete } from "../store/tasksSlice";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
   const dispatch = useDispatch();
   const [expandedId, setExpandedId] = useState(null);
   const [sortType, setSortType] = useState("time");
   const [sortedData, setSortedData] = useState([]);
+  const [visibleData, setVisibleData] = useState([]);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 6;
 
   useEffect(() => {
-    const sorted = [...data];
-    switch (sortType) {
-      case "time":
-        sorted.sort(
-          (a, b) => new Date(a.alarmTime || 0) - new Date(b.alarmTime || 0)
-        );
-        break;
-      case "newest":
-        sorted.sort(
-          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-        );
-        break;
-      case "oldest":
-        sorted.sort(
-          (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-        );
-        break;
-      case "az":
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-        break;
+    if (data?.length) {
+      const sorted = [...data];
+      switch (sortType) {
+        case "time":
+          sorted.sort((a, b) => new Date(a.alarmTime || 0) - new Date(b.alarmTime || 0));
+          break;
+        case "newest":
+          sorted.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          break;
+        case "oldest":
+          sorted.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+          break;
+        case "az":
+          sorted.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+      }
+      setSortedData(sorted);
+      setPage(1);
+      setVisibleData(sorted.slice(0, itemsPerPage));
     }
-    setSortedData(sorted);
   }, [data, sortType]);
 
-  const toggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+  const loadMore = () => {
+    const nextPage = page + 1;
+    const nextItems = sortedData.slice(0, nextPage * itemsPerPage);
+    setPage(nextPage);
+    setVisibleData(nextItems);
   };
 
+const toggleExpand = (id) => {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  setExpandedId((prevId) => (prevId === id ? null : id));
+};
   const getRemainingTime = (alarmTime) => {
     const now = new Date();
     const target = new Date(alarmTime);
@@ -55,16 +69,15 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
 
     if (diff <= 0) return "⏰ Time's up";
 
-    const diffInHours = diff / (1000 * 60 * 60);
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (diffInHours > 24) {
-      const daysLeft = Math.floor(diffInHours / 24);
+    if (hours >= 24) {
+      const daysLeft = Math.floor(hours / 24);
       return `🗓 ${daysLeft} day${daysLeft > 1 ? "s" : ""} left`;
-    } else {
-      const hours = Math.floor(diffInHours);
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      return `⏳ ${hours}h ${minutes}m left`;
     }
+
+    return `⏳ ${hours}h ${minutes}m left`;
   };
 
   const openEditModal = (task) => {
@@ -79,6 +92,68 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
     setInputVisible(true);
   };
 
+  const renderItem = ({ item: task }) => {
+    const isExpanded = expandedId === task.id;
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.8}
+        onPress={() => toggleExpand(task.id)}
+      >
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{task.title}</Text>
+            {task.alarmTime && (
+              <Text style={styles.remainingTime}>
+                {getRemainingTime(task.alarmTime)}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.iconGroup}>
+            {task.important && (
+              <Ionicons
+                name="heart"
+                size={18}
+                color="#ef4444"
+                style={styles.icon}
+              />
+            )}
+            <TouchableOpacity onPress={() => openEditModal(task)}>
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color="#3b82f6"
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <>
+            <Text style={styles.desc}>{task.desc}</Text>
+            <View style={styles.footerRow}>
+              <TouchableOpacity
+                style={[
+                  styles.statusButton,
+                  {
+                    backgroundColor: task.completed ? "#047857" : "#f87171",
+                  },
+                ]}
+                onPress={() => dispatch(toggleComplete(task.id))}
+              >
+                <Text style={styles.statusText}>
+                  {task.completed ? "Completed" : "Incomplete"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -89,6 +164,7 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
             onValueChange={(value) => setSortType(value)}
             style={styles.sortPicker}
             dropdownIconColor="#fff"
+            mode="dropdown"
           >
             <Picker.Item label="Time" value="time" />
             <Picker.Item label="Newest" value="newest" />
@@ -97,75 +173,15 @@ const Cards = ({ home, setInputVisible, data, setUpdatedData }) => {
           </Picker>
         </View>
 
-        <ScrollView contentContainerStyle={styles.list}>
-          {sortedData &&
-            sortedData.map((task) => {
-              const isExpanded = expandedId === task.id;
-
-              return (
-                <TouchableOpacity
-                  key={task.id}
-                  style={styles.card}
-                  activeOpacity={0.8}
-                  onPress={() => toggleExpand(task.id)}
-                >
-                  <View style={styles.headerRow}>
-                    <View style={{ marginBottom: 3, flex: 1 }}>
-                      <Text style={styles.title}>{task.title}</Text>
-                      {task.alarmTime && (
-                        <Text style={styles.remainingTime}>
-                          {getRemainingTime(task.alarmTime)}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View style={styles.iconGroup}>
-                      {task.important && (
-                        <Ionicons
-                          name="heart"
-                          size={18}
-                          color="#ef4444"
-                          style={styles.icon}
-                        />
-                      )}
-                      <TouchableOpacity onPress={() => openEditModal(task)}>
-                        <Ionicons
-                          name="information-circle-outline"
-                          size={22}
-                          color="#3b82f6"
-                          style={styles.icon}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {isExpanded && (
-                    <>
-                      <Text style={styles.desc}>{task.desc}</Text>
-
-                      <View style={styles.footerRow}>
-                        <TouchableOpacity
-                          style={[
-                            styles.statusButton,
-                            {
-                              backgroundColor: task.completed
-                                ? "#047857"
-                                : "#f87171",
-                            },
-                          ]}
-                          onPress={() => dispatch(toggleComplete(task.id))}
-                        >
-                          <Text style={styles.statusText}>
-                            {task.completed ? "Completed" : "Incomplete"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-        </ScrollView>
+        <FlatList
+          data={visibleData}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.6}
+          showsVerticalScrollIndicator={false}
+        />
 
         {home === "true" && (
           <TouchableOpacity
@@ -206,6 +222,7 @@ const styles = StyleSheet.create({
   sortPicker: {
     flex: 1,
     color: "#fff",
+    marginTop: -8,
   },
   list: {
     padding: 12,

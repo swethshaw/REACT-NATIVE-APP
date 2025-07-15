@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Animated,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
@@ -52,45 +51,28 @@ const AllTasksScreen = () => {
     <View style={styles.container}>
       {!tasks ? (
         <Loader />
+      ) : tasks.length === 0 ? (
+        <Animated.View style={[styles.emptyContainer, { opacity: fadeAnim }]}>
+          <Ionicons name="notifications-off-outline" size={60} color="#9ca3af" />
+          <Text style={styles.emptyText}>No tasks or reminders</Text>
+          <TouchableOpacity style={styles.addButton} onPress={() => setInputVisible(true)}>
+            <Text style={styles.addButtonText}>Add Task</Text>
+          </TouchableOpacity>
+        </Animated.View>
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {tasks.length === 0 ? (
-              <Animated.View
-                style={[styles.emptyContainer, { opacity: fadeAnim }]}
-              >
-                <Ionicons
-                  name="notifications-off-outline"
-                  size={60}
-                  color="#9ca3af"
-                />
-                <Text style={styles.emptyText}>No tasks or reminders</Text>
-
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => setInputVisible(true)}
-                >
-                  <Text style={styles.addButtonText}>Add Task</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            ) : (
-              <Cards
-                home={true}
-                data={tasks}
-                setInputVisible={setInputVisible}
-                setUpdatedData={setUpdatedData}
-              />
-            )}
-          </ScrollView>
-
-          {tasks.length > 0 && (
-            <TouchableOpacity
-              style={styles.floatingButton}
-              onPress={() => setInputVisible(true)}
-            >
-              <Ionicons name="add" size={32} color="#fff" />
-            </TouchableOpacity>
-          )}
+          <Cards
+            home={true}
+            data={tasks}
+            setInputVisible={setInputVisible}
+            setUpdatedData={setUpdatedData}
+          />
+          <TouchableOpacity
+            style={styles.floatingButton}
+            onPress={() => setInputVisible(true)}
+          >
+            <Ionicons name="add" size={32} color="#fff" />
+          </TouchableOpacity>
         </>
       )}
 
@@ -110,12 +92,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111827",
-    // paddingTop: 10,
-    // paddingHorizontal: 10,
     position: "relative",
-  },
-  scrollContent: {
-    paddingBottom: 80,
   },
   floatingButton: {
     position: "absolute",
@@ -135,11 +112,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 100,
+    paddingHorizontal: 16,
   },
   emptyText: {
     marginTop: 16,
     fontSize: 16,
     color: "#9ca3af",
+    textAlign: "center",
   },
   addButton: {
     marginTop: 20,

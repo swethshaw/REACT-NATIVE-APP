@@ -8,9 +8,9 @@ import {
   StyleSheet,
   Alert,
   Switch,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Platform,
 } from "react-native";
 import * as Notifications from "expo-notifications";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +18,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
 import { useDispatch } from "react-redux";
 import { addTask, updateTask, deleteTask } from "../store/tasksSlice";
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -36,41 +37,39 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     notificationId: null,
   });
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [enableDate, setEnableDate] = useState(false);
   const [enableTime, setEnableTime] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (updatedData?.id) {
-      setForm({
-        title: updatedData.title || "",
-        desc: updatedData.desc || "",
-        important: updatedData.important ?? false,
-        alarmTime: updatedData.alarmTime || null,
-        notificationId: updatedData.notificationId || null,
-      });
+    if (visible) {
+      if (updatedData?.id) {
+        const alarm = updatedData.alarmTime
+          ? new Date(updatedData.alarmTime)
+          : null;
 
-      if (updatedData.alarmTime) {
-        const alarmDate = new Date(updatedData.alarmTime);
-        setEnableDate(true);
-        setEnableTime(
-          alarmDate.getHours() !== 0 || alarmDate.getMinutes() !== 0
-        );
+        setForm({
+          title: updatedData.title || "",
+          desc: updatedData.desc || "",
+          important: updatedData.important ?? false,
+          alarmTime: alarm,
+          notificationId: updatedData.notificationId || null,
+        });
+
+        if (alarm) {
+          setEnableDate(true);
+          setEnableTime(alarm.getHours() !== 0 || alarm.getMinutes() !== 0);
+        }
+      } else {
+        resetForm(false); // Don't hide modal
       }
-    } else {
-      setForm({
-        title: "",
-        desc: "",
-        important: false,
-        alarmTime: null,
-        notificationId: null,
-      });
     }
-  }, [updatedData]);
+  }, [visible, updatedData?.id]);
 
-  const resetForm = () => {
-    setVisible(false);
+  const resetForm = (hide = true) => {
+    if (hide) setVisible(false);
     setForm({
       title: "",
       desc: "",
@@ -83,11 +82,12 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     setShowDatePicker(false);
     setShowTimePicker(false);
     setUpdatedData({});
+    setErrors({});
   };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
-    if (event.type === "set" && selectedDate) {
+    if (selectedDate) {
       const updated = new Date(form.alarmTime || new Date());
       updated.setFullYear(
         selectedDate.getFullYear(),
@@ -100,71 +100,66 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 
   const handleTimeChange = (event, selectedTime) => {
     setShowTimePicker(false);
-    if (event.type === "set" && selectedTime) {
+    if (selectedTime) {
       const updated = new Date(form.alarmTime || new Date());
       updated.setHours(selectedTime.getHours(), selectedTime.getMinutes());
       setForm((prev) => ({ ...prev, alarmTime: updated }));
     }
   };
 
-  const scheduleNotification = async (title, alarmTime) => {
-    if (!alarmTime) return null;
+  const scheduleNotification = async (title, time) => {
+    if (!time) return null;
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: "Task Reminder",
         body: `Reminder to complete: ${title}`,
       },
-      trigger: { type: "date", date: alarmTime },
+      trigger: { type: "date", date: time },
     });
     return id;
   };
 
   const cancelNotification = async (id) => {
-    if (id) {
-      await Notifications.cancelScheduledNotificationAsync(id);
-    }
+    if (id) await Notifications.cancelScheduledNotificationAsync(id);
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.desc) {
-      Alert.alert("Validation Error", "Title and description are required.");
+    const currentErrors = {};
+    if (!form.title.trim()) currentErrors.title = true;
+    if (!form.desc.trim()) currentErrors.desc = true;
+    if (Object.keys(currentErrors).length > 0) {
+      setErrors(currentErrors);
       return;
     }
 
-    let alarmTime = null;
-    if (enableDate || enableTime) {
-      const now = new Date();
-      const base = form.alarmTime ? new Date(form.alarmTime) : now;
-      const date = enableDate ? base : now;
-      const time = enableTime ? base : now;
-      alarmTime = new Date(
-        date.setHours(time.getHours(), time.getMinutes(), 0, 0)
-      );
-    }
+    const alarmTime =
+      enableDate || enableTime
+        ? new Date(form.alarmTime || new Date()).setSeconds(0, 0)
+        : null;
 
     if (updatedData?.notificationId) {
       await cancelNotification(updatedData.notificationId);
     }
 
     const notificationId = alarmTime
-      ? await scheduleNotification(form.title, alarmTime)
+      ? await scheduleNotification(form.title, new Date(alarmTime))
       : null;
 
-    const taskPayload = {
+    const payload = {
       ...form,
-      alarmTime: alarmTime ? alarmTime.toISOString() : null,
+      alarmTime: alarmTime ? new Date(alarmTime).toISOString() : null,
       notificationId,
     };
 
     if (updatedData?.id) {
-      dispatch(updateTask({ id: updatedData.id, ...taskPayload }));
+      dispatch(updateTask({ id: updatedData.id, ...payload }));
     } else {
       dispatch(
         addTask({
           id: uuid.v4(),
-          completed: false,
           createdAt: new Date().toISOString(),
-          ...taskPayload,
+          completed: false,
+          ...payload,
         })
       );
     }
@@ -173,7 +168,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   };
 
   const handleDelete = () => {
-    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
+    Alert.alert("Delete Task", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -189,111 +184,119 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     ]);
   };
 
+  const formattedDate = form.alarmTime
+    ? new Date(form.alarmTime).toLocaleDateString()
+    : "";
+  const formattedTime = form.alarmTime
+    ? new Date(form.alarmTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
   return (
-    <Modal animationType="slide" transparent visible={visible}>
+    <Modal visible={visible} transparent animationType="slide">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.overlay}>
           <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={resetForm}>
+            <TouchableOpacity onPress={() => resetForm()} style={styles.closeButton}>
               <Ionicons name="close" size={28} color="#fff" />
             </TouchableOpacity>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.title && styles.errorInput]}
               placeholder="Title"
               placeholderTextColor="#ccc"
               value={form.title}
-              onChangeText={(text) =>
-                setForm((prev) => ({ ...prev, title: text }))
-              }
+              onChangeText={(text) => {
+                setForm((prev) => ({ ...prev, title: text }));
+                setErrors((e) => ({ ...e, title: false }));
+              }}
             />
 
             <TextInput
-              style={[styles.input, { height: 100 }]}
+              style={[styles.input, styles.descInput, errors.desc && styles.errorInput]}
               placeholder="Description"
               placeholderTextColor="#ccc"
               value={form.desc}
-              onChangeText={(text) =>
-                setForm((prev) => ({ ...prev, desc: text }))
-              }
               multiline
+              onChangeText={(text) => {
+                setForm((prev) => ({ ...prev, desc: text }));
+                setErrors((e) => ({ ...e, desc: false }));
+              }}
             />
 
-            <View style={styles.switchContainer}>
+            <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Mark as Important</Text>
               <Switch
                 value={form.important}
-                onValueChange={(value) =>
-                  setForm((prev) => ({ ...prev, important: value }))
-                }
+                onValueChange={(v) => setForm((prev) => ({ ...prev, important: v }))}
               />
             </View>
 
-            <View style={styles.switchContainer}>
+            <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Set Date</Text>
               <Switch
                 value={enableDate}
-                onValueChange={(val) => {
-                  setEnableDate(val);
-                  if (val) {
-                    setShowDatePicker(true);
-                  } else if (!val && !enableTime) {
-                    setForm((prev) => ({ ...prev, alarmTime: null }));
-                  }
-                }}
+                onValueChange={(v) => setEnableDate(v)}
               />
             </View>
 
-            {showDatePicker && (
-              <DateTimePicker
-                mode="date"
-                display="calendar"
-                value={form.alarmTime ? new Date(form.alarmTime) : new Date()}
-                onChange={handleDateChange}
-                minimumDate={new Date()}
-              />
+            {enableDate && (
+              <>
+                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                  <Text style={styles.previewText}>
+                    {formattedDate || "Tap to select date"}
+                  </Text>
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    mode="date"
+                    display="default"
+                    value={form.alarmTime || new Date()}
+                    onChange={handleDateChange}
+                    minimumDate={new Date()}
+                  />
+                )}
+              </>
             )}
 
-            <View style={styles.switchContainer}>
+            <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Set Time</Text>
               <Switch
                 value={enableTime}
-                onValueChange={(val) => {
-                  setEnableTime(val);
-                  if (val) {
-                    setShowTimePicker(true);
-                  } else if (!val && !enableDate) {
-                    setForm((prev) => ({ ...prev, alarmTime: null }));
-                  }
-                }}
+                onValueChange={(v) => setEnableTime(v)}
               />
             </View>
 
-            {showTimePicker && (
-              <DateTimePicker
-                mode="time"
-                display="spinner"
-                value={form.alarmTime ? new Date(form.alarmTime) : new Date()}
-                onChange={handleTimeChange}
-                is24Hour={false}
-              />
+            {enableTime && (
+              <>
+                <TouchableOpacity onPress={() => setShowTimePicker(true)}>
+                  <Text style={styles.previewText}>
+                    {formattedTime || "Tap to select time"}
+                  </Text>
+                </TouchableOpacity>
+                {showTimePicker && (
+                  <DateTimePicker
+                    mode="time"
+                    display="default"
+                    value={form.alarmTime || new Date()}
+                    onChange={handleTimeChange}
+                    is24Hour={false}
+                  />
+                )}
+              </>
             )}
 
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}
-            >
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitText}>
-                {updatedData?.id ? "Update" : "Submit"}
+                {updatedData?.id ? "Update" : "Add Task"}
               </Text>
             </TouchableOpacity>
 
             {updatedData?.id && (
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
-              >
-                <Text style={styles.deleteText}>Delete Task</Text>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <Text style={styles.submitText}>Delete Task</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -314,30 +317,43 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#111827",
-    padding: 20,
-    borderRadius: 10,
     width: "90%",
+    borderRadius: 10,
+    padding: 20,
   },
   closeButton: {
     alignSelf: "flex-end",
-    marginBottom: 10,
   },
   input: {
     backgroundColor: "#374151",
     color: "#fff",
     padding: 10,
     borderRadius: 8,
-    marginBottom: 12,
-  },
-  switchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: 10,
+  },
+  descInput: {
+    height: 90,
+    textAlignVertical: "top",
+  },
+  errorInput: {
+    borderWidth: 1,
+    borderColor: "#ef4444",
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   switchLabel: {
     color: "#fff",
     fontSize: 16,
+  },
+  previewText: {
+    color: "#9ca3af",
+    fontSize: 14,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   submitButton: {
     backgroundColor: "#3b82f6",
@@ -346,11 +362,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 12,
   },
-  submitText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
   deleteButton: {
     backgroundColor: "#ef4444",
     padding: 12,
@@ -358,7 +369,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  deleteText: {
+  submitText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
