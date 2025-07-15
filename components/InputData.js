@@ -63,7 +63,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
           setEnableTime(alarm.getHours() !== 0 || alarm.getMinutes() !== 0);
         }
       } else {
-        resetForm(false); // Don't hide modal
+        resetForm(false);
       }
     }
   }, [visible, updatedData?.id]);

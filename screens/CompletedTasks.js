@@ -58,14 +58,12 @@ const CompletedTasksScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* <ScrollView contentContainerStyle={styles.scrollContent}> */}
         <Cards
           home={false}
           data={completedTasks}
           setInputVisible={setInputVisible}
           setUpdatedData={setUpdatedData}
         />
-      {/* </ScrollView> */}
 
       <TouchableOpacity style={styles.clearButton} onPress={handleClearAll}>
         <Text style={styles.clearButtonText}>Clear All</Text>
@@ -88,9 +86,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#111827",
     position: "relative",
-  },
-  scrollContent: {
-    paddingBottom: 80,
   },
   centered: {
     flex: 1,

@@ -35,14 +35,12 @@ const IncompleteTasksScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* <ScrollView contentContainerStyle={styles.scrollContent}> */}
         <Cards
           home={false}
           data={incompleteTasks}
           setInputVisible={setInputVisible}
           setUpdatedData={setUpdatedData}
         />
-      {/* </ScrollView> */}
 
       <InputData
         visible={inputVisible}
@@ -60,9 +58,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111827",
-  },
-  scrollContent: {
-    paddingBottom: 80,
   },
   centered: {
     flex: 1,
