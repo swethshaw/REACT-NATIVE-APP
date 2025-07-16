@@ -23,7 +23,6 @@ import {
 } from "../utils/notifications";
 import { Audio } from "expo-av";
 
-// ✅ Static sound map
 const soundMap = {
   default: require("../assets/sounds/chime.mp3"),
   "chime.wav": require("../assets/sounds/beep.wav"),
@@ -35,6 +34,11 @@ const playSound = async (soundFile) => {
     const source = soundMap[soundFile] || soundMap["default"];
     const { sound } = await Audio.Sound.createAsync(source);
     await sound.playAsync();
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
   } catch (error) {
     console.error("Error playing sound:", error);
   }
@@ -132,17 +136,28 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       return;
     }
 
-    const alarmTime =
-      enableDate || enableTime
-        ? new Date(form.alarmTime || new Date()).setSeconds(0, 0)
-        : null;
-
+    const now = new Date();
+    let alarm = new Date(form.alarmTime || now);
+    if (enableDate || enableTime) {
+      if (!enableDate) {
+        alarm.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+      if (!enableTime) {
+        alarm.setHours(9, 0);
+      }
+      alarm.setSeconds(0, 0);
+    }
+    const alarmTime = enableDate || enableTime ? alarm : null;
     if (updatedData?.notificationId) {
       await cancelAlarmNotification(updatedData.notificationId);
     }
 
     const notificationId = alarmTime
-      ? await scheduleAlarmNotification(form.title, new Date(alarmTime), form.sound)
+      ? await scheduleAlarmNotification(
+          form.title,
+          new Date(alarmTime),
+          form.sound
+        )
       : null;
 
     const payload = {
@@ -315,13 +330,13 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
                 </Picker>
 
                 {form.sound && (
-  <TouchableOpacity
-    onPress={() => playSound(form.sound)}
-    style={styles.previewButton}
-  >
-    <Text style={styles.previewText}>▶️ Preview Sound</Text>
-  </TouchableOpacity>
-)}
+                  <TouchableOpacity
+                    onPress={() => playSound(form.sound)}
+                    style={styles.previewButton}
+                  >
+                    <Text style={styles.previewText}>▶️ Preview Sound</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -350,7 +365,6 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 };
 
 export default InputData;
-
 
 const styles = StyleSheet.create({
   overlay: {

@@ -7,7 +7,7 @@ export const configureNotificationChannel = async (sound = "default") => {
       await Notifications.setNotificationChannelAsync("alarm", {
         name: "Alarm Notifications",
         importance: Notifications.AndroidImportance.HIGH,
-        sound: sound === "default" ? undefined : sound, 
+        sound: sound === "default" ? undefined : sound,
         vibrationPattern: [0, 500, 1000],
         lightColor: "#FF231F7C",
         bypassDnd: true,
@@ -18,7 +18,6 @@ export const configureNotificationChannel = async (sound = "default") => {
     }
   }
 };
-
 
 export const scheduleAlarmNotification = async (title, time, sound = "default") => {
   if (!time || new Date(time) < new Date()) return null;
@@ -32,12 +31,12 @@ export const scheduleAlarmNotification = async (title, time, sound = "default") 
       content: {
         title: "🔔 Alarm Reminder",
         body: `Reminder: ${title}`,
-        sound: sound === "default" ? "default" : sound, 
+        sound: sound === "default" ? "default" : sound,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: {
-        channelId: "alarm",
         date: new Date(time),
+        channelId: "alarm",
       },
     });
 
@@ -48,7 +47,6 @@ export const scheduleAlarmNotification = async (title, time, sound = "default") 
     return null;
   }
 };
-
 
 export const cancelAlarmNotification = async (id) => {
   try {

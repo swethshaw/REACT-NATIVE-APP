@@ -6,7 +6,6 @@ import { StatusBar } from "expo-status-bar";
 import { Provider, useDispatch } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
 import { Platform } from "react-native";
 
 import store from "./store/store";
@@ -19,6 +18,14 @@ import CompletedTasksScreen from "./screens/CompletedTasks";
 import ImportantTasksScreen from "./screens/ImportantTasks";
 import IncompleteTasksScreen from "./screens/IncompletedTasks";
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 const Tab = createBottomTabNavigator();
 
 const InitApp = () => {
@@ -26,13 +33,16 @@ const InitApp = () => {
 
   useEffect(() => {
     (async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") {
-        alert("Please enable notifications to use the alarm feature.");
-      }
-
       if (Platform.OS === "android") {
         await configureNotificationChannel();
+      }
+
+      const { granted } = await Notifications.getPermissionsAsync();
+      if (!granted) {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== "granted") {
+          alert("Please enable notifications to use the alarm feature.");
+        }
       }
 
       const storedTasks = await loadTasks();
