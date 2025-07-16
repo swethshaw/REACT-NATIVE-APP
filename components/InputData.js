@@ -24,16 +24,22 @@ import {
 import { Audio } from "expo-av";
 
 const soundMap = {
-  default: require("../assets/sounds/chime.mp3"),
-  "chime.wav": require("../assets/sounds/beep.wav"),
-  "alarm.mp3": require("../assets/sounds/alarm.wav"),
+  "beep.wav": require("../assets/sounds/beep.wav"),
+  "chime.mp3": require("../assets/sounds/chime.mp3"),
+  "alarm.wav": require("../assets/sounds/alarm.wav"),
 };
 
 const playSound = async (soundFile) => {
   try {
-    const source = soundMap[soundFile] || soundMap["default"];
+    const source = soundMap[soundFile];
+    if (!source) {
+      console.warn("Sound not found in soundMap:", soundFile);
+      return;
+    }
+
     const { sound } = await Audio.Sound.createAsync(source);
     await sound.playAsync();
+
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.didJustFinish) {
         sound.unloadAsync();
@@ -43,6 +49,7 @@ const playSound = async (soundFile) => {
     console.error("Error playing sound:", error);
   }
 };
+
 
 const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   const dispatch = useDispatch();
@@ -324,12 +331,13 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
                   dropdownIconColor="#fff"
                   itemStyle={{ color: "#fff" }}
                 >
-                  <Picker.Item label="Default" value="default" />
+                  <Picker.Item label="System Default" value="default" />
+                  <Picker.Item label="Beep" value="beep.wav" />
                   <Picker.Item label="Chime" value="chime.mp3" />
                   <Picker.Item label="Alarm Tone" value="alarm.wav" />
                 </Picker>
 
-                {form.sound && (
+                {form.sound !== "default" && (
                   <TouchableOpacity
                     onPress={() => playSound(form.sound)}
                     style={styles.previewButton}

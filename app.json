@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "taskmanager",
-    "slug": "taskmanager",
+    "name": "taskreminder",
+    "slug": "taskreminder",
     "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
