@@ -12,6 +12,7 @@ import {
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
 import { useDispatch } from "react-redux";
@@ -20,6 +21,24 @@ import {
   scheduleAlarmNotification,
   cancelAlarmNotification,
 } from "../utils/notifications";
+import { Audio } from "expo-av";
+
+// ✅ Static sound map
+const soundMap = {
+  default: require("../assets/sounds/chime.mp3"),
+  "chime.wav": require("../assets/sounds/beep.wav"),
+  "alarm.mp3": require("../assets/sounds/alarm.wav"),
+};
+
+const playSound = async (soundFile) => {
+  try {
+    const source = soundMap[soundFile] || soundMap["default"];
+    const { sound } = await Audio.Sound.createAsync(source);
+    await sound.playAsync();
+  } catch (error) {
+    console.error("Error playing sound:", error);
+  }
+};
 
 const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
   const dispatch = useDispatch();
@@ -72,6 +91,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       important: false,
       alarmTime: null,
       notificationId: null,
+      sound: "default",
     });
     setEnableDate(false);
     setEnableTime(false);
@@ -111,6 +131,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
       setErrors(currentErrors);
       return;
     }
+
     const alarmTime =
       enableDate || enableTime
         ? new Date(form.alarmTime || new Date()).setSeconds(0, 0)
@@ -121,7 +142,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
     }
 
     const notificationId = alarmTime
-      ? await scheduleNotification(form.title, new Date(alarmTime), form.sound)
+      ? await scheduleAlarmNotification(form.title, new Date(alarmTime), form.sound)
       : null;
 
     const payload = {
@@ -286,12 +307,21 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
                   }
                   style={styles.picker}
                   dropdownIconColor="#fff"
+                  itemStyle={{ color: "#fff" }}
                 >
                   <Picker.Item label="Default" value="default" />
-                  <Picker.Item label="Beep" value="beep.wav" />
-                  <Picker.Item label="Chime" value="chime.wav" />
-                  <Picker.Item label="Alarm Tone" value="alarm.mp3" />
+                  <Picker.Item label="Chime" value="chime.mp3" />
+                  <Picker.Item label="Alarm Tone" value="alarm.wav" />
                 </Picker>
+
+                {form.sound && (
+  <TouchableOpacity
+    onPress={() => playSound(form.sound)}
+    style={styles.previewButton}
+  >
+    <Text style={styles.previewText}>▶️ Preview Sound</Text>
+  </TouchableOpacity>
+)}
               </View>
             )}
 
@@ -320,6 +350,7 @@ const InputData = ({ visible, setVisible, updatedData, setUpdatedData }) => {
 };
 
 export default InputData;
+
 
 const styles = StyleSheet.create({
   overlay: {
@@ -386,5 +417,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  pickerContainer: {
+    marginBottom: 10,
+  },
+  picker: {
+    color: "#fff",
+    backgroundColor: "#374151",
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  previewButton: {
+    marginTop: 6,
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: "#374151",
+    borderRadius: 6,
   },
 });
